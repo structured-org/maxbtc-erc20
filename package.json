@@ -21,7 +21,7 @@
   ],
   "private": true,
   "scripts": {
-    "lint:sol": "forge fmt --check && bun solhint -w 0 'src/*.sol'",
+    "lint:sol": "forge fmt --check && bun solhint -w 0 'src/*.sol' 'script/*.sol' 'test/*.sol'",
     "lint:natspec": "lintspec 'src/'",
     "test:coverage": "forge coverage"
   }
