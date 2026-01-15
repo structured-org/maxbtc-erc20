@@ -1,0 +1,12 @@
+{
+    // Use VS Code's built-in "Format on Save" and delegate formatting to the Solidity extension.
+    // The extension will call `forge fmt` and therefore respect `foundry.toml` formatting rules.
+    "editor.formatOnSave": true,
+
+    // Hardhat Solidity extension formatter settings
+    "solidity.formatter": "forge",
+    "[solidity]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "nomicfoundation.hardhat-solidity"
+    }
+}
