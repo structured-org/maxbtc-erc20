@@ -1,22 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {
-    ReentrancyGuardUpgradeable
-} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import {
-    Initializable
-} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {
-    UUPSUpgradeable
-} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {
-    Ownable2StepUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {
-    SafeERC20
-} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IReceiver {
     /// Returns current exchange rate and timestamp of publication.
@@ -28,12 +18,7 @@ interface ICoreContract {
     function mintFee(uint256 amount) external;
 }
 
-contract FeeCollector is
-    Initializable,
-    UUPSUpgradeable,
-    ReentrancyGuardUpgradeable,
-    Ownable2StepUpgradeable
-{
+contract FeeCollector is Initializable, UUPSUpgradeable, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using SafeERC20 for IERC20;
 
     uint256 private constant ONE = 1e18;
@@ -73,18 +58,11 @@ contract FeeCollector is
     error InvalidErReceiverAddress();
     error InvalidCollectionPeriodSeconds();
     error InvalidStalenessThreshold();
-    error StaleExchangeRate(
-        uint256 dataTimestamp,
-        uint256 currentTimestamp,
-        uint256 threshold
-    );
+    error StaleExchangeRate(uint256 dataTimestamp, uint256 currentTimestamp, uint256 threshold);
 
     /// @notice Emitted when fees are collected and minted to the core contract.
     event FeeCollected(
-        uint256 mintedAmount,
-        uint256 currentExchangeRate,
-        uint256 previousExchangeRate,
-        uint256 totalSupplyBefore
+        uint256 mintedAmount, uint256 currentExchangeRate, uint256 previousExchangeRate, uint256 totalSupplyBefore
     );
 
     /// @notice Emitted when the owner claims accumulated fees.
@@ -100,12 +78,10 @@ contract FeeCollector is
     );
 
     /// @dev keccak256(abi.encode(uint256(keccak256("maxbtc.fee_collector.config")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant CONFIG_STORAGE_SLOT =
-        0x55a5612efb3791db0b287c4f2521a452b64dc8c1ea03edaa7b8f0870c0bd6300;
+    bytes32 private constant CONFIG_STORAGE_SLOT = 0x55a5612efb3791db0b287c4f2521a452b64dc8c1ea03edaa7b8f0870c0bd6300;
 
     /// @dev keccak256(abi.encode(uint256(keccak256("maxbtc.fee_collector.state")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant STATE_STORAGE_SLOT =
-        0x966789e57aed537e5e5c5502b1c3700bbababa9893769d9edb5dcfab993bfe00;
+    bytes32 private constant STATE_STORAGE_SLOT = 0x966789e57aed537e5e5c5502b1c3700bbababa9893769d9edb5dcfab993bfe00;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -120,18 +96,19 @@ contract FeeCollector is
         uint64 collectionPeriodSeconds_,
         address feeToken_,
         uint256 stalenessThreshold_
-    ) external initializer {
+    )
+        external
+        initializer
+    {
         if (coreContract_ == address(0)) revert InvalidCoreContractAddress();
         if (erReceiver_ == address(0)) revert InvalidErReceiverAddress();
         if (feeToken_ == address(0)) revert InvalidFeeTokenAddress();
-        if (
-            feeApyReductionPercentage_ == 0 || feeApyReductionPercentage_ >= ONE
-        ) {
+        if (feeApyReductionPercentage_ == 0 || feeApyReductionPercentage_ >= ONE) {
             revert InvalidFeeReductionPercentage();
         }
         if (
-            collectionPeriodSeconds_ < MIN_COLLECTION_PERIOD_SECONDS ||
-            collectionPeriodSeconds_ > MAX_COLLECTION_PERIOD_SECONDS
+            collectionPeriodSeconds_ < MIN_COLLECTION_PERIOD_SECONDS
+                || collectionPeriodSeconds_ > MAX_COLLECTION_PERIOD_SECONDS
         ) {
             revert InvalidCollectionPeriodSeconds();
         }
@@ -147,23 +124,15 @@ contract FeeCollector is
         config.feeApyReductionPercentage = feeApyReductionPercentage_;
         config.collectionPeriodSeconds = collectionPeriodSeconds_;
         config.feeToken = IERC20(feeToken_);
-        if (
-            stalenessThreshold_ == 0 ||
-            stalenessThreshold_ > MAX_STALENESS_THRESHOLD_SECONDS
-        ) {
+        if (stalenessThreshold_ == 0 || stalenessThreshold_ > MAX_STALENESS_THRESHOLD_SECONDS) {
             revert InvalidStalenessThreshold();
         }
         config.stalenessThreshold = stalenessThreshold_;
 
-        (uint256 initialRate, uint256 initialTimestamp) = IReceiver(erReceiver_)
-            .getLatest();
+        (uint256 initialRate, uint256 initialTimestamp) = IReceiver(erReceiver_).getLatest();
 
         if (block.timestamp > initialTimestamp + stalenessThreshold_) {
-            revert StaleExchangeRate(
-                initialTimestamp,
-                block.timestamp,
-                stalenessThreshold_
-            );
+            revert StaleExchangeRate(initialTimestamp, block.timestamp, stalenessThreshold_);
         }
 
         State storage st = _getState();
@@ -175,23 +144,16 @@ contract FeeCollector is
         Config storage config = _getConfig();
         State storage st = _getState();
 
-        uint256 nextAllowed = st.lastCollectionTimestamp +
-            config.collectionPeriodSeconds;
+        uint256 nextAllowed = st.lastCollectionTimestamp + config.collectionPeriodSeconds;
 
         if (block.timestamp < nextAllowed) {
             revert CollectionPeriodNotElapsed();
         }
 
-        (uint256 currentRate, uint256 currentTimestamp) = IReceiver(
-            config.erReceiver
-        ).getLatest();
+        (uint256 currentRate, uint256 currentTimestamp) = IReceiver(config.erReceiver).getLatest();
 
         if (block.timestamp > currentTimestamp + config.stalenessThreshold) {
-            revert StaleExchangeRate(
-                currentTimestamp,
-                block.timestamp,
-                config.stalenessThreshold
-            );
+            revert StaleExchangeRate(currentTimestamp, block.timestamp, config.stalenessThreshold);
         }
 
         uint256 totalSupply = config.feeToken.totalSupply();
@@ -201,12 +163,7 @@ contract FeeCollector is
         }
 
         uint256 previousRate = st.lastExchangeRate;
-        uint256 toMint = calculateFeeToMint(
-            previousRate,
-            currentRate,
-            totalSupply,
-            config.feeApyReductionPercentage
-        );
+        uint256 toMint = calculateFeeToMint(previousRate, currentRate, totalSupply, config.feeApyReductionPercentage);
 
         if (toMint == 0) {
             return;
@@ -236,25 +193,22 @@ contract FeeCollector is
         uint256 newFeeApyReductionPercentage,
         uint64 newCollectionPeriodSeconds,
         uint256 newStalenessThreshold
-    ) external onlyOwner {
+    )
+        external
+        onlyOwner
+    {
         if (newCoreContract == address(0)) revert InvalidCoreContractAddress();
         if (newErReceiver == address(0)) revert InvalidErReceiverAddress();
-        if (
-            newFeeApyReductionPercentage == 0 ||
-            newFeeApyReductionPercentage >= ONE
-        ) {
+        if (newFeeApyReductionPercentage == 0 || newFeeApyReductionPercentage >= ONE) {
             revert InvalidFeeReductionPercentage();
         }
         if (
-            newCollectionPeriodSeconds < MIN_COLLECTION_PERIOD_SECONDS ||
-            newCollectionPeriodSeconds > MAX_COLLECTION_PERIOD_SECONDS
+            newCollectionPeriodSeconds < MIN_COLLECTION_PERIOD_SECONDS
+                || newCollectionPeriodSeconds > MAX_COLLECTION_PERIOD_SECONDS
         ) {
             revert InvalidCollectionPeriodSeconds();
         }
-        if (
-            newStalenessThreshold == 0 ||
-            newStalenessThreshold > MAX_STALENESS_THRESHOLD_SECONDS
-        ) {
+        if (newStalenessThreshold == 0 || newStalenessThreshold > MAX_STALENESS_THRESHOLD_SECONDS) {
             revert InvalidStalenessThreshold();
         }
 
@@ -303,7 +257,11 @@ contract FeeCollector is
         uint256 rateCurrent,
         uint256 totalSupplyCurrent,
         uint256 feeReductionPercentage
-    ) public pure returns (uint256) {
+    )
+        public
+        pure
+        returns (uint256)
+    {
         if (rateCurrent <= rateOld) return 0;
 
         uint256 gain = rateCurrent - rateOld;
@@ -323,7 +281,5 @@ contract FeeCollector is
         return feeAtomic;
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner { }
 }

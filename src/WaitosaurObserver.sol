@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {WaitosaurBase, WaitosaurState} from "./WaitosaurBase.sol";
+import { WaitosaurBase, WaitosaurState } from "./WaitosaurBase.sol";
 
 /// @notice Minimal oracle interface used to fetch spot balance of a given asset
 /// @dev In tests this will be a mock. In production it will wrap your real AUM module.
 interface IAumOracle {
-    function getSpotBalance(
-        string calldata asset
-    ) external view returns (uint256 _balance, uint256 _ts);
+    function getSpotBalance(string calldata asset) external view returns (uint256 _balance, uint256 _ts);
 }
 
 struct WaitosaurObserverConfig {
@@ -27,11 +25,7 @@ contract WaitosaurObserver is WaitosaurBase {
     error InvalidAsset();
     error ConfigCantBeUpdatedWhenLocked();
     error InvalidStalenessThreshold();
-    error StaleOracleData(
-        uint256 dataTimestamp,
-        uint256 currentTimestamp,
-        uint256 threshold
-    );
+    error StaleOracleData(uint256 dataTimestamp, uint256 currentTimestamp, uint256 threshold);
 
     // ---------------------------------------------------------------------
     // Events
@@ -47,18 +41,13 @@ contract WaitosaurObserver is WaitosaurBase {
     // ---------------------------------------------------------------------
 
     /// @dev keccak256(abi.encode(uint256(keccak256("maxbtc.waitosaur.observer.config")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant CONFIG_STORAGE_SLOT =
-        0xa3610185eb222d8e74f6618d40b7c4662aee6c24d7161ae6a36cd8ec3a4c7500;
+    bytes32 private constant CONFIG_STORAGE_SLOT = 0xa3610185eb222d8e74f6618d40b7c4662aee6c24d7161ae6a36cd8ec3a4c7500;
 
     constructor() {
         _disableInitializers();
     }
 
-    function _config()
-        private
-        pure
-        returns (WaitosaurObserverConfig storage $)
-    {
+    function _config() private pure returns (WaitosaurObserverConfig storage $) {
         assembly {
             $.slot := CONFIG_STORAGE_SLOT
         }
@@ -71,7 +60,10 @@ contract WaitosaurObserver is WaitosaurBase {
         address oracle_,
         string calldata asset_,
         uint256 stalenessThreshold_
-    ) public initializer {
+    )
+        public
+        initializer
+    {
         if (oracle_ == address(0)) revert InvalidOracleAddress();
         if (bytes(asset_).length == 0) revert InvalidAsset();
 
@@ -80,24 +72,15 @@ contract WaitosaurObserver is WaitosaurBase {
         WaitosaurObserverConfig storage config = _config();
         config.oracle = oracle_;
         config.asset = asset_;
-        if (
-            stalenessThreshold_ == 0 ||
-            stalenessThreshold_ > MAX_STALENESS_THRESHOLD
-        ) {
+        if (stalenessThreshold_ == 0 || stalenessThreshold_ > MAX_STALENESS_THRESHOLD) {
             revert InvalidStalenessThreshold();
         }
         config.stalenessThreshold = stalenessThreshold_;
 
         // Verify initial oracle data is not stale
-        (, uint256 initialTimestamp) = IAumOracle(oracle_).getSpotBalance(
-            asset_
-        );
+        (, uint256 initialTimestamp) = IAumOracle(oracle_).getSpotBalance(asset_);
         if (block.timestamp > initialTimestamp + stalenessThreshold_) {
-            revert StaleOracleData(
-                initialTimestamp,
-                block.timestamp,
-                stalenessThreshold_
-            );
+            revert StaleOracleData(initialTimestamp, block.timestamp, stalenessThreshold_);
         }
     }
 
@@ -110,7 +93,10 @@ contract WaitosaurObserver is WaitosaurBase {
         address newOracle,
         string calldata newAsset,
         uint256 newStalenessThreshold
-    ) external onlyOwner {
+    )
+        external
+        onlyOwner
+    {
         WaitosaurObserverConfig storage config = _config();
         WaitosaurState storage state = _getState();
         if (state.lockedAmount != 0) revert ConfigCantBeUpdatedWhenLocked();
@@ -134,11 +120,7 @@ contract WaitosaurObserver is WaitosaurBase {
     // Queries
     // ---------------------------------------------------------------------
 
-    function getConfig()
-        external
-        pure
-        returns (WaitosaurObserverConfig memory)
-    {
+    function getConfig() external pure returns (WaitosaurObserverConfig memory) {
         WaitosaurObserverConfig storage config = _config();
         return config;
     }
@@ -147,21 +129,11 @@ contract WaitosaurObserver is WaitosaurBase {
     // Overrides
     // ---------------------------------------------------------------------
 
-    function _getInitialOracleBalance()
-        internal
-        view
-        override(WaitosaurBase)
-        returns (uint256)
-    {
+    function _getInitialOracleBalance() internal view override(WaitosaurBase) returns (uint256) {
         WaitosaurObserverConfig storage config = _config();
-        (uint256 aum, uint256 initialTimestamp) = IAumOracle(config.oracle)
-            .getSpotBalance(config.asset);
+        (uint256 aum, uint256 initialTimestamp) = IAumOracle(config.oracle).getSpotBalance(config.asset);
         if (block.timestamp > initialTimestamp + config.stalenessThreshold) {
-            revert StaleOracleData(
-                initialTimestamp,
-                block.timestamp,
-                config.stalenessThreshold
-            );
+            revert StaleOracleData(initialTimestamp, block.timestamp, config.stalenessThreshold);
         }
         return aum;
     }
@@ -169,15 +141,10 @@ contract WaitosaurObserver is WaitosaurBase {
     function _unlock() internal view override(WaitosaurBase) {
         WaitosaurObserverConfig storage config = _config();
         WaitosaurState storage state = _getState();
-        (uint256 spotBalance, uint256 dataTimestamp) = IAumOracle(config.oracle)
-            .getSpotBalance(config.asset);
+        (uint256 spotBalance, uint256 dataTimestamp) = IAumOracle(config.oracle).getSpotBalance(config.asset);
 
         if (block.timestamp > dataTimestamp + config.stalenessThreshold) {
-            revert StaleOracleData(
-                dataTimestamp,
-                block.timestamp,
-                config.stalenessThreshold
-            );
+            revert StaleOracleData(dataTimestamp, block.timestamp, config.stalenessThreshold);
         }
 
         // Verify that balance increased by at least the locked amount
@@ -194,7 +161,5 @@ contract WaitosaurObserver is WaitosaurBase {
     // UUPS Authorization
     // ---------------------------------------------------------------------
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner { }
 }

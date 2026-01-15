@@ -1,21 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Test} from "forge-std/Test.sol";
-import {
-    ERC1967Proxy
-} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { Test } from "forge-std/Test.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-import {
-    WaitosaurObserver,
-    WaitosaurObserverConfig,
-    IAumOracle
-} from "../src/WaitosaurObserver.sol";
-import {
-    WaitosaurBase,
-    WaitosaurState,
-    WaitosaurAccess
-} from "../src/WaitosaurBase.sol";
+import { WaitosaurObserver, WaitosaurObserverConfig, IAumOracle } from "../src/WaitosaurObserver.sol";
+import { WaitosaurBase, WaitosaurState, WaitosaurAccess } from "../src/WaitosaurBase.sol";
 
 /// @notice Simple mock oracle returning a preset balance
 contract MockAumOracle is IAumOracle {
@@ -32,9 +22,7 @@ contract MockAumOracle is IAumOracle {
     }
 
     /// @notice Always returns the preset balance (ignores the asset name)
-    function getSpotBalance(
-        string calldata
-    ) external view override returns (uint256, uint256) {
+    function getSpotBalance(string calldata) external view override returns (uint256, uint256) {
         return (_balance, _timestamp);
     }
 }
@@ -77,14 +65,7 @@ contract WaitosaurObserverTest is Test {
         proxy = new ERC1967Proxy(address(impl), "");
         observer = WaitosaurObserver(address(proxy));
 
-        observer.initialize(
-            owner,
-            locker,
-            unlocker,
-            address(oracle),
-            asset,
-            3600
-        );
+        observer.initialize(owner, locker, unlocker, address(oracle), asset, 3600);
 
         vm.stopPrank();
     }
@@ -112,28 +93,14 @@ contract WaitosaurObserverTest is Test {
         WaitosaurObserver fresh = _deployUninitializedProxy();
         vm.prank(owner);
         vm.expectRevert(WaitosaurBase.InvalidRolesAddresses.selector);
-        fresh.initialize(
-            owner,
-            address(0),
-            unlocker,
-            address(oracle),
-            asset,
-            3600
-        );
+        fresh.initialize(owner, address(0), unlocker, address(oracle), asset, 3600);
     }
 
     function testInitializeZeroUnlockerReverts() public {
         WaitosaurObserver fresh = _deployUninitializedProxy();
         vm.prank(owner);
         vm.expectRevert(WaitosaurBase.InvalidRolesAddresses.selector);
-        fresh.initialize(
-            owner,
-            locker,
-            address(0),
-            address(oracle),
-            asset,
-            3600
-        );
+        fresh.initialize(owner, locker, address(0), address(oracle), asset, 3600);
     }
 
     function testInitializeZeroOracleReverts() public {
@@ -162,14 +129,7 @@ contract WaitosaurObserverTest is Test {
         vm.prank(owner);
         vm.expectRevert(WaitosaurObserver.InvalidStalenessThreshold.selector);
         // use a very large value to exceed any reasonable MAX_STALENESS_THRESHOLD
-        fresh.initialize(
-            owner,
-            locker,
-            unlocker,
-            address(oracle),
-            asset,
-            type(uint256).max
-        );
+        fresh.initialize(owner, locker, unlocker, address(oracle), asset, type(uint256).max);
     }
 
     function testInitializeTwiceReverts() public {
@@ -309,20 +269,10 @@ contract WaitosaurObserverTest is Test {
         vm.prank(owner);
         vm.expectRevert(
             abi.encodeWithSelector(
-                WaitosaurObserver.StaleOracleData.selector,
-                staleOracle._timestamp(),
-                block.timestamp,
-                3600
+                WaitosaurObserver.StaleOracleData.selector, staleOracle._timestamp(), block.timestamp, 3600
             )
         );
-        fresh.initialize(
-            owner,
-            locker,
-            unlocker,
-            address(staleOracle),
-            asset,
-            3600
-        );
+        fresh.initialize(owner, locker, unlocker, address(staleOracle), asset, 3600);
     }
 
     function testUnlockRevertsOnStaleOracleData() public {
@@ -339,12 +289,7 @@ contract WaitosaurObserverTest is Test {
 
         vm.prank(unlocker);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                WaitosaurObserver.StaleOracleData.selector,
-                oracleTimestamp,
-                block.timestamp,
-                3600
-            )
+            abi.encodeWithSelector(WaitosaurObserver.StaleOracleData.selector, oracleTimestamp, block.timestamp, 3600)
         );
         observer.unlock();
     }
@@ -416,9 +361,7 @@ contract WaitosaurObserverTest is Test {
         observer.lock(1 ether);
 
         vm.prank(owner);
-        vm.expectRevert(
-            WaitosaurObserver.ConfigCantBeUpdatedWhenLocked.selector
-        );
+        vm.expectRevert(WaitosaurObserver.ConfigCantBeUpdatedWhenLocked.selector);
         observer.updateConfig(address(0x12), "ETH", 0);
     }
 
@@ -497,12 +440,7 @@ contract WaitosaurObserverTest is Test {
     function testUpgradeToV2RevertsForNonOwner() public {
         WaitosaurObserverV2 implV2 = new WaitosaurObserverV2();
 
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "OwnableUnauthorizedAccount(address)",
-                address(this)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", address(this)));
 
         observer.upgradeToAndCall(address(implV2), "");
     }
