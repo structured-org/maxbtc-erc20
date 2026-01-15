@@ -19,6 +19,7 @@ contract MaxBTCERC20Test is Test {
             abi.encodeCall(MaxBTCERC20.initialize, (OWNER, ICS20, "Structured maxBTC", "maxBTC"));
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), maxBTCERC20InitializeCall);
         maxBtcErc20 = MaxBTCERC20(address(proxy));
+        vm.prank(OWNER);
         maxBtcErc20.initializeV2(CORE);
     }
 
