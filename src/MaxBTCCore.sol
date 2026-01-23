@@ -522,10 +522,10 @@ contract MaxBTCCore is Initializable, UUPSUpgradeable, ReentrancyGuardUpgradeabl
             revert SlippageLimitExceeded(minReceiveAmount, maxBtcToMint);
         }
 
-        SafeERC20.safeTransferFrom(IERC20(config.depositToken), msg.sender, address(this), amount);
+        SafeERC20.safeTransferFrom(IERC20(config.depositToken), _msgSender(), address(this), amount);
 
         MaxBTCERC20(config.maxBtcToken).mint(recipient, maxBtcToMint);
-        emit Deposit(msg.sender, recipient, amount, maxBtcToMint);
+        emit Deposit(_msgSender(), recipient, amount, maxBtcToMint);
     }
 
     function withdraw(uint256 maxBtcAmount) external notPaused onlyAllowlisted(_msgSender()) nonReentrant {
