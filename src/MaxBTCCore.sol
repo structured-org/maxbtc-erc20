@@ -538,7 +538,7 @@ contract MaxBTCCore is Initializable, UUPSUpgradeable, ReentrancyGuardUpgradeabl
         batch.maxBtcToBurn += maxBtcAmount;
         uint256 batchId = batch.batchId;
         //transfer maxBTC from the user to this contract
-        MaxBTCERC20(config.maxBtcToken).transferFrom(_msgSender(), address(this), maxBtcAmount);
+        SafeERC20.safeTransferFrom(IERC20(config.maxBtcToken), _msgSender(), address(this), maxBtcAmount);
         //mint a withdrawal token to the user representing their claim
         WithdrawalToken(config.withdrawalToken).mint(_msgSender(), batchId, maxBtcAmount, "");
         emit Withdrawal(_msgSender(), maxBtcAmount, batchId);
