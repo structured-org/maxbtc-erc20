@@ -18,8 +18,6 @@ contract MaxBTCERC20 is IMintableAndBurnable, UUPSUpgradeable, ERC20Upgradeable,
     /// @param limit Allowed amount of tokens to burn/mint
     error EurekaRateLimitsExceeded(uint256 requested, uint256 limit);
 
-    error InvalidCoreAddress();
-
     event CoreUpdated(address updater, address core);
     event Ics20Updated(address updater, address ics20);
     event EurekaRateLimitsUpdated(address updater, uint256 inbound, uint256 outbound);
@@ -79,9 +77,6 @@ contract MaxBTCERC20 is IMintableAndBurnable, UUPSUpgradeable, ERC20Upgradeable,
     /// @param core_ The Core contract address
     function initializeV2(address core_) external reinitializer(2) onlyOwner {
         __Ownable2Step_init();
-        if (core_ == address(0)) {
-            revert InvalidCoreAddress();
-        }
         StorageSlot.getAddressSlot(CORE_STORAGE_SLOT).value = core_;
     }
 
@@ -119,8 +114,11 @@ contract MaxBTCERC20 is IMintableAndBurnable, UUPSUpgradeable, ERC20Upgradeable,
             }
 
             rateLimits.inbound -= amount;
-        } else if (_msgSender() != core()) {
-            revert CallerIsNotAllowed(_msgSender());
+        } else {
+            address _core = core();
+            if (_core == address(0) || _core != _msgSender()) {
+                revert CallerIsNotAllowed(_msgSender());
+            }
         }
 
         _mint(mintAddress, amount);
@@ -135,8 +133,11 @@ contract MaxBTCERC20 is IMintableAndBurnable, UUPSUpgradeable, ERC20Upgradeable,
             }
 
             rateLimits.outbound -= amount;
-        } else if (_msgSender() != core()) {
-            revert CallerIsNotAllowed(_msgSender());
+        } else {
+            address _core = core();
+            if (_core == address(0) || _core != _msgSender()) {
+                revert CallerIsNotAllowed(_msgSender());
+            }
         }
 
         _burn(mintAddress, amount);
@@ -155,9 +156,6 @@ contract MaxBTCERC20 is IMintableAndBurnable, UUPSUpgradeable, ERC20Upgradeable,
     /// @notice Allows token owner to update Core
     /// @param core_ The Core contract address
     function updateCore(address core_) external onlyOwner {
-        if (core_ == address(0)) {
-            revert InvalidCoreAddress();
-        }
         StorageSlot.getAddressSlot(CORE_STORAGE_SLOT).value = core_;
         emit CoreUpdated(_msgSender(), core_);
     }
