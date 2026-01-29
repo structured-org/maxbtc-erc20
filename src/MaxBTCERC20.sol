@@ -74,7 +74,7 @@ contract MaxBTCERC20 is IMintableAndBurnable, UUPSUpgradeable, ERC20Upgradeable,
     }
 
     /// @notice Migrates the MaxBTCERC20 contract to V2
-    /// @param core_ The Core contract address
+    /// @param core_ The Core contract address (zero address means core is not set)
     function initializeV2(address core_) external reinitializer(2) onlyOwner {
         __Ownable2Step_init();
         StorageSlot.getAddressSlot(CORE_STORAGE_SLOT).value = core_;
@@ -154,7 +154,7 @@ contract MaxBTCERC20 is IMintableAndBurnable, UUPSUpgradeable, ERC20Upgradeable,
     }
 
     /// @notice Allows token owner to update Core
-    /// @param core_ The Core contract address
+    /// @param core_ The Core contract address (zero address means core is not set)
     function updateCore(address core_) external onlyOwner {
         StorageSlot.getAddressSlot(CORE_STORAGE_SLOT).value = core_;
         emit CoreUpdated(_msgSender(), core_);

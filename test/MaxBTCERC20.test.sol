@@ -29,8 +29,26 @@ contract MaxBTCERC20Test is Test {
         assertEq(maxBtcErc20.balanceOf(ESCROW), 100);
     }
 
+    function testMintSuccessWithCoreUnset() external {
+        vm.startPrank(OWNER);
+        maxBtcErc20.updateCore(address(0));
+        maxBtcErc20.setEurekaRateLimits(100, 0);
+
+        vm.startPrank(ICS20);
+        maxBtcErc20.mint(ESCROW, 100);
+        assertEq(maxBtcErc20.balanceOf(ESCROW), 100);
+    }
+
     function testMintUnauthorized() external {
         vm.startPrank(OWNER);
+        vm.expectRevert(abi.encodeWithSelector(MaxBTCERC20.CallerIsNotAllowed.selector, OWNER));
+        maxBtcErc20.mint(ESCROW, 100);
+    }
+
+    function testMintUnauthorizedWithCoreUnset() external {
+        vm.startPrank(OWNER);
+        maxBtcErc20.updateCore(address(0));
+
         vm.expectRevert(abi.encodeWithSelector(MaxBTCERC20.CallerIsNotAllowed.selector, OWNER));
         maxBtcErc20.mint(ESCROW, 100);
     }
@@ -42,10 +60,29 @@ contract MaxBTCERC20Test is Test {
         assertEq(maxBtcErc20.balanceOf(ESCROW), 80);
     }
 
+    function testBurnSuccessWithCoreUnset() external {
+        vm.startPrank(OWNER);
+        maxBtcErc20.updateCore(address(0));
+        maxBtcErc20.setEurekaRateLimits(100, 20);
+
+        vm.startPrank(ICS20);
+        maxBtcErc20.mint(ESCROW, 100);
+        maxBtcErc20.burn(ESCROW, 20);
+        assertEq(maxBtcErc20.balanceOf(ESCROW), 80);
+    }
+
     function testBurnUnauthorized() external {
         vm.startPrank(CORE);
         maxBtcErc20.mint(ESCROW, 100);
         vm.startPrank(OWNER);
+        vm.expectRevert(abi.encodeWithSelector(MaxBTCERC20.CallerIsNotAllowed.selector, OWNER));
+        maxBtcErc20.burn(ESCROW, 20);
+    }
+
+    function testBurnUnauthorizedWithCoreUnset() external {
+        vm.startPrank(OWNER);
+        maxBtcErc20.updateCore(address(0));
+
         vm.expectRevert(abi.encodeWithSelector(MaxBTCERC20.CallerIsNotAllowed.selector, OWNER));
         maxBtcErc20.burn(ESCROW, 20);
     }
