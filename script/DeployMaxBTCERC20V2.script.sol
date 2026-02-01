@@ -15,7 +15,10 @@ contract DeployMaxBTCERC20 is Script {
 
         MaxBTCERC20 maxBTC = MaxBTCERC20(proxy);
 
-        vm.startBroadcast();
+        uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        address deployer = vm.addr(deployerKey);
+        console.log("Using deployer address:", deployer);
+        vm.startBroadcast(deployerKey);
         maxBTC.upgradeToAndCall(newImplementation, initializeV2Call);
         vm.stopBroadcast();
 
