@@ -7,7 +7,10 @@ import { MaxBTCERC20 } from "../src/MaxBTCERC20.sol";
 
 contract DeployMaxBTCERC20Implementation is Script {
     function run() external {
-        vm.startBroadcast();
+        uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        address deployer = vm.addr(deployerKey);
+        console.log("Using deployer address:", deployer);
+        vm.startBroadcast(deployerKey);
         MaxBTCERC20 maxBTCERC20 = new MaxBTCERC20();
         vm.stopBroadcast();
 

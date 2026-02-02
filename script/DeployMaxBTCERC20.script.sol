@@ -16,7 +16,10 @@ contract DeployMaxBTCERC20 is Script {
 
         bytes memory initializeCall = abi.encodeCall(MaxBTCERC20.initialize, (owner, ics20, name, symbol));
 
-        vm.startBroadcast();
+        uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        address deployer = vm.addr(deployerKey);
+        console.log("Using deployer address:", deployer);
+        vm.startBroadcast(deployerKey);
         ERC1967Proxy proxy = new ERC1967Proxy(implementation, initializeCall);
         vm.stopBroadcast();
 
