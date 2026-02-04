@@ -327,6 +327,10 @@ contract MaxBTCCore is Initializable, UUPSUpgradeable, ReentrancyGuardUpgradeabl
         return batch;
     }
 
+    function getConfig() public pure returns (CoreConfig memory) {
+        return _getCoreConfig();
+    }
+
     /// @notice Returns finalized batches in range [start; start+limit)
     /// @param start Index of first batch to retrieve (returns empty array if out of range)
     /// @param limit Maximum number of batches to retrieve (defaults to 10 if 0 provided, cannot exceed 100)
@@ -522,10 +526,10 @@ contract MaxBTCCore is Initializable, UUPSUpgradeable, ReentrancyGuardUpgradeabl
             revert SlippageLimitExceeded(minReceiveAmount, maxBtcToMint);
         }
 
-        SafeERC20.safeTransferFrom(IERC20(config.depositToken), msg.sender, address(this), amount);
+        SafeERC20.safeTransferFrom(IERC20(config.depositToken), _msgSender(), address(this), amount);
 
         MaxBTCERC20(config.maxBtcToken).mint(recipient, maxBtcToMint);
-        emit Deposit(msg.sender, recipient, amount, maxBtcToMint);
+        emit Deposit(_msgSender(), recipient, amount, maxBtcToMint);
     }
 
     function withdraw(uint256 maxBtcAmount) external notPaused onlyAllowlisted(_msgSender()) nonReentrant {
@@ -538,7 +542,7 @@ contract MaxBTCCore is Initializable, UUPSUpgradeable, ReentrancyGuardUpgradeabl
         batch.maxBtcToBurn += maxBtcAmount;
         uint256 batchId = batch.batchId;
         //transfer maxBTC from the user to this contract
-        MaxBTCERC20(config.maxBtcToken).transferFrom(_msgSender(), address(this), maxBtcAmount);
+        SafeERC20.safeTransferFrom(IERC20(config.maxBtcToken), _msgSender(), address(this), maxBtcAmount);
         //mint a withdrawal token to the user representing their claim
         WithdrawalToken(config.withdrawalToken).mint(_msgSender(), batchId, maxBtcAmount, "");
         emit Withdrawal(_msgSender(), maxBtcAmount, batchId);

@@ -19,6 +19,7 @@ contract MaxBTCERC20Test is Test {
             abi.encodeCall(MaxBTCERC20.initialize, (OWNER, ICS20, "Structured maxBTC", "maxBTC"));
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), maxBTCERC20InitializeCall);
         maxBtcErc20 = MaxBTCERC20(address(proxy));
+        vm.prank(OWNER);
         maxBtcErc20.initializeV2(CORE);
     }
 
@@ -28,8 +29,26 @@ contract MaxBTCERC20Test is Test {
         assertEq(maxBtcErc20.balanceOf(ESCROW), 100);
     }
 
+    function testMintSuccessWithCoreUnset() external {
+        vm.startPrank(OWNER);
+        maxBtcErc20.updateCore(address(0));
+        maxBtcErc20.setEurekaRateLimits(100, 0);
+
+        vm.startPrank(ICS20);
+        maxBtcErc20.mint(ESCROW, 100);
+        assertEq(maxBtcErc20.balanceOf(ESCROW), 100);
+    }
+
     function testMintUnauthorized() external {
         vm.startPrank(OWNER);
+        vm.expectRevert(abi.encodeWithSelector(MaxBTCERC20.CallerIsNotAllowed.selector, OWNER));
+        maxBtcErc20.mint(ESCROW, 100);
+    }
+
+    function testMintUnauthorizedWithCoreUnset() external {
+        vm.startPrank(OWNER);
+        maxBtcErc20.updateCore(address(0));
+
         vm.expectRevert(abi.encodeWithSelector(MaxBTCERC20.CallerIsNotAllowed.selector, OWNER));
         maxBtcErc20.mint(ESCROW, 100);
     }
@@ -41,10 +60,29 @@ contract MaxBTCERC20Test is Test {
         assertEq(maxBtcErc20.balanceOf(ESCROW), 80);
     }
 
+    function testBurnSuccessWithCoreUnset() external {
+        vm.startPrank(OWNER);
+        maxBtcErc20.updateCore(address(0));
+        maxBtcErc20.setEurekaRateLimits(100, 20);
+
+        vm.startPrank(ICS20);
+        maxBtcErc20.mint(ESCROW, 100);
+        maxBtcErc20.burn(ESCROW, 20);
+        assertEq(maxBtcErc20.balanceOf(ESCROW), 80);
+    }
+
     function testBurnUnauthorized() external {
         vm.startPrank(CORE);
         maxBtcErc20.mint(ESCROW, 100);
         vm.startPrank(OWNER);
+        vm.expectRevert(abi.encodeWithSelector(MaxBTCERC20.CallerIsNotAllowed.selector, OWNER));
+        maxBtcErc20.burn(ESCROW, 20);
+    }
+
+    function testBurnUnauthorizedWithCoreUnset() external {
+        vm.startPrank(OWNER);
+        maxBtcErc20.updateCore(address(0));
+
         vm.expectRevert(abi.encodeWithSelector(MaxBTCERC20.CallerIsNotAllowed.selector, OWNER));
         maxBtcErc20.burn(ESCROW, 20);
     }

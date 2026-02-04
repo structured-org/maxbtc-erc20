@@ -4,7 +4,6 @@ pragma solidity ^0.8.28;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { MaxBTCERC20 } from "../src/MaxBTCERC20.sol";
-import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployMaxBTCERC20 is Script {
     function run() external {
@@ -16,7 +15,10 @@ contract DeployMaxBTCERC20 is Script {
 
         MaxBTCERC20 maxBTC = MaxBTCERC20(proxy);
 
-        vm.startBroadcast();
+        uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        address deployer = vm.addr(deployerKey);
+        console.log("Using deployer address:", deployer);
+        vm.startBroadcast(deployerKey);
         maxBTC.upgradeToAndCall(newImplementation, initializeV2Call);
         vm.stopBroadcast();
 

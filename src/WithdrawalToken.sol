@@ -9,7 +9,6 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { StorageSlot } from "@openzeppelin/contracts/utils/StorageSlot.sol";
 
 contract WithdrawalToken is
     Initializable,
@@ -65,6 +64,10 @@ contract WithdrawalToken is
 
     function name() public view returns (string memory) {
         return _getWithdrawalTokenConfig().name;
+    }
+
+    function getConfig() public pure returns (WithdrawalTokenConfig memory) {
+        return _getWithdrawalTokenConfig();
     }
 
     function _setName(string memory newName) internal {
