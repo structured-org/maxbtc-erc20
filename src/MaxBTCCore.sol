@@ -327,6 +327,10 @@ contract MaxBTCCore is Initializable, UUPSUpgradeable, ReentrancyGuardUpgradeabl
         return batch;
     }
 
+    function getConfig() public pure returns (CoreConfig memory) {
+        return _getCoreConfig();
+    }
+
     /// @notice Returns finalized batches in range [start; start+limit)
     /// @param start Index of first batch to retrieve (returns empty array if out of range)
     /// @param limit Maximum number of batches to retrieve (defaults to 10 if 0 provided, cannot exceed 100)
