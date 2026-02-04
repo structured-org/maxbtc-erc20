@@ -66,6 +66,10 @@ contract WithdrawalToken is
         return _getWithdrawalTokenConfig().name;
     }
 
+    function getConfig() public pure returns (WithdrawalTokenConfig memory) {
+        return _getWithdrawalTokenConfig();
+    }
+
     function _setName(string memory newName) internal {
         _getWithdrawalTokenConfig().name = newName;
     }
