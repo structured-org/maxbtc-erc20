@@ -251,27 +251,37 @@ contract WithdrawalManagerTest is Test {
 
     function testUpdateConfigByOwner() public {
         // Owner updates config successfully
-        address newAllowlist = address(0x4444);
+        address newCore = address(0x4444);
+        address newWithdrawalToken = address(0x5555);
+        address newAllowlist = address(0x6666);
 
         vm.prank(owner);
-        manager.updateConfig(newAllowlist);
+        manager.updateConfig(newCore, newWithdrawalToken, newAllowlist);
 
         WithdrawalManager.WithdrawalManagerConfig memory config = manager.getConfig();
 
+        assertEq(config.coreContract, newCore);
+        assertEq(config.withdrawalTokenContract, newWithdrawalToken);
         assertEq(config.allowlistContract, newAllowlist);
     }
 
     function testUpdateConfigRevertsForNonOwner() public {
         // Non-owner must not be able to update config
         vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", address(this)));
-        manager.updateConfig(address(4));
+        manager.updateConfig(address(4), address(5), address(6));
     }
 
     function testUpdateConfigRevertsForZeroAddresses() public {
         // Zero addresses are forbidden
-        vm.prank(owner);
+        vm.startPrank(owner);
+        vm.expectRevert(abi.encodeWithSelector(WithdrawalManager.InvalidCoreContractAddress.selector));
+        manager.updateConfig(address(0), address(1), address(1));
+
+        vm.expectRevert(abi.encodeWithSelector(WithdrawalManager.InvalidWithdrawalTokenContractAddress.selector));
+        manager.updateConfig(address(1), address(0), address(1));
+
         vm.expectRevert(abi.encodeWithSelector(WithdrawalManager.InvalidAllowlistContractAddress.selector));
-        manager.updateConfig(address(0));
+        manager.updateConfig(address(1), address(1), address(0));
     }
 
     function testPauseAndUnpauseEmitsEventsAndChangesState() public {

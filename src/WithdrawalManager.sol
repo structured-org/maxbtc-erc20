@@ -144,12 +144,32 @@ contract WithdrawalManager is Initializable, UUPSUpgradeable, ERC1155HolderUpgra
         revert BatchSupportNotEnabled();
     }
 
-    function updateConfig(address newAllowlistContract) external onlyOwner {
+    function updateConfig(
+        address newCoreContract,
+        address newWithdrawalTokenContract,
+        address newAllowlistContract
+    )
+        external
+        onlyOwner
+    {
         WithdrawalManagerConfig storage config = _getWithdrawalManagerConfig();
+
+        if (newCoreContract == address(0)) {
+            revert InvalidCoreContractAddress();
+        }
+        if (newWithdrawalTokenContract == address(0)) {
+            revert InvalidWithdrawalTokenContractAddress();
+        }
         if (newAllowlistContract == address(0)) {
             revert InvalidAllowlistContractAddress();
         }
+
+        config.coreContract = newCoreContract;
+        config.withdrawalTokenContract = newWithdrawalTokenContract;
         config.allowlistContract = newAllowlistContract;
+
+        emit ConfigSettingUpdated("coreContract", newCoreContract);
+        emit ConfigSettingUpdated("withdrawalToken", newWithdrawalTokenContract);
         emit ConfigSettingUpdated("allowlistContract", newAllowlistContract);
     }
 
